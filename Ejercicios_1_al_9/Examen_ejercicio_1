@@ -1,0 +1,84 @@
+#include "sapi.h"        // <= Biblioteca sAPI
+
+void cambiarColor(char);
+void leer_tecla(void);
+
+int espera = 0;     // para guardar la mitad del periodo
+uint8_t led = LEDB; // para guardar el LED a encender
+int tiempo = 0;     // para contar el tiempo  
+
+int main( void )
+{
+    boardConfig();
+    uartConfig( UART_USB, 115200 );
+
+    uint8_t led_rx = 'x';
+    
+    tiempo = 0;
+    espera = 25;
+    
+    gpioWrite(LEDB, OFF );
+    gpioWrite(LED1, OFF );
+    gpioWrite(LED2, OFF );
+    gpioWrite(LED3, OFF );
+
+    while( TRUE ) {
+
+        if(uartReadByte(UART_USB, &led_rx)) {
+            cambiarColor(led_rx);
+        }
+        leer_tecla();
+        delay(1);
+        tiempo++;
+
+        if(tiempo >= espera) {  // cuando se supera medio periodo
+            gpioToggle(led);    // se conmuta el estado del LED según el color;
+            tiempo = 0;
+        }
+    }
+    return 0;
+}
+
+void cambiarColor(char c)
+{   // primero se apagan todos los LEDs
+    gpioWrite(LEDB, OFF );
+    gpioWrite(LED1, OFF );
+    gpioWrite(LED2, OFF );
+    gpioWrite(LED3, OFF );
+    tiempo = 0;   // reinicio del tiempo para el nuevo color
+
+    switch(c) {
+    case 'a':
+        led = LEDB;
+        break;
+    case '1':
+        led = LED1;
+        break;
+    case '2':
+        led = LED2;
+        break;
+    case '3':
+        led = LED3;
+        break;
+    }
+    gpioWrite(led, ON );
+}
+
+void leer_tecla(void)
+{
+    if(gpioRead(TEC1) == 0) {
+        espera = 25;
+    }
+    if(gpioRead(TEC2) == 0) {
+        espera = 50;
+    }
+    if(gpioRead(TEC3) == 0) {
+        espera = 100;
+    }
+    if(gpioRead(TEC4) == 0) {
+        espera = 250;
+    }
+}
+
+
+

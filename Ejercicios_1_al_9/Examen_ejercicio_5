@@ -1,0 +1,42 @@
+#include "app.h"         // <= Su propia cabecera (opcional)
+#include "sapi.h"        // <= Biblioteca sAPI
+#include <stdio.h>
+
+typedef struct {
+    int x;
+    int y;
+} coord;
+
+void leer_joystick(coord *u, int, int); // función que devuelve x e y (modificando variables en una estructura)
+
+coord posicion;     // estructura que contendrá el punto (x,y)
+
+
+int main()
+{
+    boardConfig();
+    uartConfig( UART_USB, 115200);
+
+    posicion.x = 0;
+    posicion.y = 0;
+    uint16_t cont = 0;
+
+    while(1) {
+
+        if(cont >= 1000) {
+            cont = 0;
+            leer_joystick(&posicion, CH1, CH2);
+        }
+        delay(1);
+        cont++;
+    }
+
+    return 0;
+}
+
+void leer_joystick(coord *u, int canal_x, int canal_y)
+{
+    u->x = adcRead( canal_y );
+    u->y = adcRead( canal_x );
+}
+

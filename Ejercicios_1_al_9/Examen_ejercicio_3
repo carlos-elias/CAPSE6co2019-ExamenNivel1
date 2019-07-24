@@ -1,0 +1,35 @@
+// ver en: cpp.sh/63uou
+
+// Example program
+#include <iostream>
+#include <string>
+
+int main()
+{
+  int f,c;
+  int N,M;
+  printf("Ingrese valor maximo de secuencia: ");
+  fflush(stdout);
+  scanf("%d",&M);
+  printf("Ingrese cantidad de filas: ");
+  fflush(stdout);
+  scanf("%d",&N);
+  printf("\r\n");
+  
+  if(M>=N){
+  for(f=1;f<=N;f++){
+      for(c=1;c<=(M+f-1);c++){
+          if(c>=f){
+              printf("%d",c);
+              }
+          else{
+              printf(" ");
+              }
+            }
+        printf("\r\n");    
+      }}
+    else{
+        printf("Valor de secuencia debe ser mayor al de filas\r\n");
+        }  
+ return 0;     
+}

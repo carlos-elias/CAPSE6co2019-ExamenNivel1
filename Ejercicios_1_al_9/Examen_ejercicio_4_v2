@@ -1,0 +1,52 @@
+// ver en: cpp.sh/7wjoa
+
+// Example program
+#include <iostream>
+#include <string>
+#define N 9
+
+int main()
+{
+ int fil, col;
+ int vec[(N)];
+ int vec2[(N)];
+ 
+    for(col=0;col<=(N-1);col++){
+            vec[col]=0;
+            vec2[col]=0;
+        }
+    vec[0]=1; // el 1 de la cima
+
+    for(col=0;col<=(N-1);col++){ // se genera y grafica el primer renglón
+            if(vec[col]==0){    // cuando el valor sea cero se muestra un espacio en blanco
+                            printf(" ");
+                            }
+            else{   // valor diferente de cero
+                printf("%d ",vec[col]);
+                }
+        }
+    printf("\r\n");
+
+    for(fil=1;fil<=(N-1);fil++){
+        vec2[0]=1;  // el primer elemento de cada renglón es 1
+        for(col=0;col<=(N-1);col++){ 
+                     
+            if((col>0) && (col<=(N-1))){      // Se calcula la suma y se guardan desde la segunda columna hasta la última columna
+                                    vec2[col]=vec[col-1]+vec[col]; // En la primera columna no se guardan valores, queda en 1
+                                }
+            if(vec2[col]==0){  // cuando el valor sea cero se muestra un espacio en blanco
+                        printf(" ");
+                    }
+            else{
+                printf("%d ",vec2[col]);
+               }
+        }
+     
+    for(col=0;col<(N-1);col++){ // se actualiza el vector usado como base para los cálculos del siguiente renglón (vector)
+                                    vec[col]=vec2[col];
+    }   
+     printf("\r\n");
+   }
+ return 0;
+}
+

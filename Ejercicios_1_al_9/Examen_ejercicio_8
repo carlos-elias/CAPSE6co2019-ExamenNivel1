@@ -1,0 +1,289 @@
+#include "sapi.h"        // <= Biblioteca sAPI
+
+#define COMMON_CATHODE
+//#define COMMON_ANODE
+
+#ifdef COMMON_CATHODE
+#define DIGIT_ON       1//0  En mi caso 1 ya que uso transistores para seleccionar los dígitos
+#define DIGIT_OFF      0//1
+#define PIN_VALUE_ON   1
+#define PIN_VALUE_OFF  0
+#endif
+
+#ifdef COMMON_ANODE
+#define DIGIT_ON       1
+#define DIGIT_OFF      0
+#define PIN_VALUE_ON   0
+#define PIN_VALUE_OFF  1
+#endif
+
+#define TIEMPO_ON 500
+
+/* Configuracion de pines para el display 7 segmentos */
+/*
+--------------------------+------------+-----------+----------------
+ Segmento encendido       | Valor BIN  | Valor HEX | GPIO resultado
+--------------------------+------------+-----------+----------------
+ Enciende el segmento 'a' | 0b00000001 |   0x01    | GPIO0
+ Enciende el segmento 'b' | 0b00000010 |   0x02    | GPIO1
+ Enciende el segmento 'c' | 0b00000100 |   0x04    | GPIO2
+ Enciende el segmento 'd' | 0b00001000 |   0x08    | GPIO3
+ Enciende el segmento 'e' | 0b00010000 |   0x10    | GPIO4
+ Enciende el segmento 'f' | 0b00100000 |   0x20    | GPIO5
+ Enciende el segmento 'g' | 0b01000000 |   0x40    | GPIO6
+ Enciende el segmento 'h' | 0b10000000 |   0x80    | GPIO7
+--------------------------+------------+-----------+----------------
+
+---------------------------------+------------+-----------+----------------
+ Digito encendido                | Valor BIN  | Valor HEX | GPIO resultado
+---------------------------------+------------+-----------+----------------
+Enciende el digito unidad        | 0b00000001 |   0x01    | LCD1
+Enciende el digito decena        | 0b00000010 |   0x02    | LCD2
+Enciende el digito centena       | 0b00000100 |   0x04    | LCD3
+Enciende el digito unidad de mil | 0b00001000 |   0x08    | LCD4
+---------------------------------+------------+-----------+----------------
+             a
+           -----
+       f /     / b
+        /  g  /
+        -----
+    e /     / c
+     /  d  /
+     -----    O h = dp (decimal point).
+
+*/
+
+
+
+// Symbols formed by segmens
+/*
+------------+------+---------
+  Segmentos | HEX  | Simbolo
+------------+------+---------
+   hgfedcba |      |
+ 0b00111111 | 0x0F |   0
+ 0b00000110 | 0x00 |   1
+ 0b01011011 | 0x00 |   2
+ 0b01001111 | 0x00 |   3
+ 0b01100110 | 0x00 |   4
+ 0b01101101 | 0x00 |   5
+ 0b01111101 | 0x00 |   6
+ 0b00000111 | 0x00 |   7
+ 0b01111111 | 0x00 |   8
+ 0b01101111 | 0x00 |   9
+
+ 0b01011111 | 0x00 |   a 10
+ 0b01111100 | 0x00 |   b 11
+ 0b01011000 | 0x00 |   c 12
+ 0b01011110 | 0x00 |   d 13
+ 0b01111011 | 0x00 |   e 14
+ 0b01110001 | 0x00 |   F 15
+
+ 0b01110111 | 0x00 |   A 16
+ 0b00111001 | 0x00 |   C 17
+ 0b01111001 | 0x00 |   E 18
+ 0b01110110 | 0x00 |   H
+ 0b00011110 | 0x00 |   J
+ 0b00111000 | 0x00 |   L
+ 0b01110011 | 0x00 |   P
+ 0b00111110 | 0x00 |   U
+
+ 0b10000000 | 0x00 |   .
+
+             a
+           -----
+       f /     / b
+        /  g  /
+        -----
+    e /     / c
+     /  d  /
+     -----    O h = dp (decimal point).
+
+*/
+
+
+
+#define DISPLAY_OFF 25
+
+const uint8_t display7SegmentOut[26] = {
+    0b00111111, // 0
+    0b00000110, // 1
+    0b01011011, // 2
+    0b01001111, // 3
+    0b01100110, // 4
+    0b01101101, // 5
+    0b01111101, // 6
+    0b00000111, // 7
+    0b01111111, // 8
+    0b01101111, // 9
+
+    0b01011111, // a
+    0b01111100, // b
+    0b01011000, // c
+    0b01011110, // d
+    0b01111011, // e
+    0b01110001, // f
+
+    0b01110111, // A
+    0b00111001, // C
+    0b01111001, // E
+    0b01110110, // H
+    0b00011110, // J
+    0b00111000, // L
+    0b01110011, // P
+    0b00111110, // U
+
+    0b10000000, // .
+
+    0b00000000  // display off
+};
+
+gpioMap_t valor[] = {
+    GPIO0,  // a
+    GPIO1,  // b
+    GPIO2,  // c
+    GPIO3,  // d
+    GPIO4,  // e
+    GPIO5,  // f
+    GPIO6,  // g
+    GPIO7   // h = dp
+};
+
+gpioMap_t digito[] = {
+    //LCD4, // D4
+    LCD1, // D1
+    LCD2, // D2
+    LCD3  // D3
+};
+
+
+void displayMostrarDigito( uint8_t val, uint8_t dig );
+void displayRefresh( void );
+void displayMostrar( uint16_t val );
+
+/* FUNCION que se ejecuta cada vez que ocurre un Tick. */
+void myTickHook( void *ptr )
+{
+    displayRefresh();
+}
+
+void mover_servo(uint16_t, int);    // función que toma el valor del pote y el número de servo
+void mostrar_angulo(int);           // función que toma el número de servo y muestra su ángulo
+
+// FUNCION PRINCIPAL, PUNTO DE ENTRADA AL PROGRAMA LUEGO DE ENCENDIDO O RESET.
+int main( void )
+{
+    // ---------- CONFIGURACIONES ------------------------------
+
+    // Inicializar y configurar la plataforma
+    boardConfig();
+    adcInit( ADC_ENABLE );
+    servoConfig( 0, SERVO_ENABLE );
+    servoConfig( SERVO4, SERVO_ENABLE_OUTPUT );
+
+    uint16_t valor_pote = 0;
+    uint16_t angulo_servo = 0;
+    uint16_t cont = 0;
+
+    uint32_t i = 0;
+
+    for( i=0; i<8; i++ ) {
+        gpioInit( valor[i], GPIO_OUTPUT );
+    }
+
+    for( i=0; i<3; i++ ) {
+        gpioInit( digito[i], GPIO_OUTPUT );
+    }
+
+    gpioWrite( digito[0], DIGIT_OFF );
+    gpioWrite( digito[1], DIGIT_OFF );
+    gpioWrite( digito[2], DIGIT_OFF );
+
+    for( i=0; i<8; i++ ) {
+        gpioWrite( valor[i], PIN_VALUE_OFF );
+    }
+
+    tickInit( 5 );
+    tickCallbackSet( myTickHook, 0 );
+
+    //delay_t delayMostrarValores;
+    //delayInit( &delayMostrarValores, 200 );
+
+    // ---------- REPETIR POR SIEMPRE --------------------------
+    i=0;
+    while( TRUE ) {
+        if(cont >= 200) {
+            cont = 0;
+            valor_pote = adcRead( CH1 ); // lectura del pote en CH1
+            mover_servo(valor_pote,SERVO4);
+            mostrar_angulo(SERVO4);           // función que lee y muestra el valor del ángulo del servo
+        }
+        delay(1);
+        cont++;
+    }
+    return 0;
+}
+
+
+void displayMostrarDigito( uint8_t val, uint8_t dig )
+{
+    uint8_t j = 0;
+    gpioWrite( digito[dig], DIGIT_ON );
+    for( j=0; j<8; j++ ) {
+        if( display7SegmentOut[val] & (1<<j) ) {
+            gpioWrite( valor[j], PIN_VALUE_ON );
+        } else {
+            gpioWrite( valor[j], PIN_VALUE_OFF );
+        }
+    }
+}
+
+
+uint8_t digitosAMostrar[3] = { DISPLAY_OFF, DISPLAY_OFF, DISPLAY_OFF };
+
+void displayRefresh( void )
+{
+    static uint8_t digitoAMostrar = 0;
+
+    uint8_t i = 0;
+    for( i=0; i<3; i++ ) {
+        gpioWrite( digito[i], DIGIT_OFF );
+    }
+
+    if(digitoAMostrar <= 2) {
+        displayMostrarDigito( digitosAMostrar[digitoAMostrar], digitoAMostrar );
+        digitoAMostrar++;
+    } else {
+        digitoAMostrar=0;
+    }
+}
+
+void displayMostrar( uint16_t val )
+{
+    if( val <= 999 ) {
+        digitosAMostrar[2] = val/100;      // centena
+        digitosAMostrar[1] = (val%100)/10; // decena
+        digitosAMostrar[0] = val%10;       // unidad
+    }
+    if( val <= 99 ) {
+        digitosAMostrar[2] = DISPLAY_OFF;  // centena
+    }
+    if( val <= 9 ) {
+        digitosAMostrar[1] = DISPLAY_OFF;  // decena
+    }
+}
+
+void mover_servo(uint16_t val, int nro_servo)
+{
+    uint16_t angu = 0;
+    angu = (val*180)/1023;          // se convierte el valor del ADC (pote) a valor de ángulo
+    servoWrite( nro_servo, angu );  // se mueve el servo al angulo correspondiente
+}
+
+void mostrar_angulo(int n_servo)
+{
+    uint16_t ang_servo = 0;
+    ang_servo = servoRead(n_servo); // Lectura de ángulo del SERVO
+    displayMostrar( ang_servo );   // llamada a la función para mostrar en display  
+}
+

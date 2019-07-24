@@ -1,0 +1,30 @@
+// ver en: cpp.sh/2mb76
+
+// Example program
+#include <iostream>
+#include <string>
+#define N 4
+#define M 13
+
+int main()
+{
+  int f,c;
+  
+  if(M>=(2*N)){
+  for(f=1;f<=N;f++){
+      for(c=1;c<=M;c++){
+          if(((f==1)&&(c>=N)&&(c<=(M-N+1)))||(f==N)||(c==(N-f+1))||(c==(M-(N-f)))){
+              printf("*");
+              }
+          else{
+              printf(" ");
+              }
+            }
+        printf("\r\n");    
+      }}
+    else{
+        printf("M debe ser el doble de N o mayor\r\n");
+        }  
+ return 0;     
+}
+

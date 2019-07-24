@@ -1,0 +1,36 @@
+#include "app.h"         // <= Su propia cabecera (opcional)
+#include "sapi.h"        // <= Biblioteca sAPI
+#include <stdio.h>
+
+void mover_servo(uint16_t, int);    // función que toma el valor del pote y el número de servo
+
+int main()
+{
+    boardConfig();
+    adcInit( ADC_ENABLE );
+    servoConfig( 0, SERVO_ENABLE );
+    servoConfig( SERVO4, SERVO_ENABLE_OUTPUT );
+
+    uint16_t valor = 0;
+    uint16_t cont = 0;
+
+    while(1) {
+
+       if(cont >= 200) {
+            cont = 0;
+            valor = adcRead( CH1 ); // lectura del pote en CH1
+            mover_servo(valor,SERVO4);
+        }
+        delay(1);
+        cont++;
+    }
+
+    return 0;
+}
+
+void mover_servo(uint16_t val, int nro_servo)
+{
+    uint16_t angu = 0;
+    angu = (val*180)/1023;          // se convierte el valor del ADC (pote) a valor de ángulo
+    servoWrite( nro_servo, angu );  // se mueve el servo al angulo correspondiente
+}

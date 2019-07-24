@@ -1,0 +1,60 @@
+// ver en: cpp.sh/8phqo
+
+// Example program
+#include <iostream>
+#include <string>
+#define N 9
+
+int main()
+{
+ int fil, col;
+ int vec[(2*N)];
+ int vec2[(2*N)];
+ 
+    for(col=0;col<=((2*N)-1);col++){
+     vec[col]=0;
+     vec2[col]=0;
+    }
+
+    for(col=0;col<((2*N)-1);col++){ // se genera y grafica el primer renglón
+        if(col==(N-1)){
+            vec[col]=1;
+        }
+        else{
+            vec[col]=0;}
+    
+        if(vec[col]==0){    // cuando el valor sea cero se muestra un espacio en blanco
+            printf("  ");
+        }
+        else{
+            printf("%d ",vec[col]);
+        }
+    }
+    printf("\r\n");
+    
+    for(fil=1;fil<=(N-1);fil++){
+        for(col=0;col<((2*N)-1);col++){  
+            if(fil==(N-1)){         // si es el último renglón se coloca un 1 en la primera y última columna 
+                vec2[0]=1;
+                vec2[(2*N)-2]=1;
+            }
+         
+            if((col>0)&&(col<((2*N)-2))){      // Se calcula la suma y se guardan desde la segunda columna hasta la ante última columna
+                vec2[col]=vec[col-1]+vec[col+1]; // En la primera y última columna no se guardan valores, quedan en cero
+            }
+            if(vec2[col]==0){  // cuando el valor sea cero se muestra un espacio en blanco
+                printf("  ");
+            }
+            else{
+                if(vec2[col]>=10) {printf("%d",vec2[col]);} // para mejorar un poco la visual (hasta N=9)
+                else {printf("%d ",vec2[col]);}       // para mejorar un poco la visual (hasta N=9)
+            }
+        }
+     
+        for(col=0;col<((2*N)-1);col++){ // se actualiza el vector usado como base para los cálculos del siguiente renglón (vector)
+            vec[col]=vec2[col];
+        }   
+        printf("\r\n");
+    }  
+}
+
